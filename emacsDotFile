@@ -1,0 +1,136 @@
+;; Initialize package sources
+(require 'package)
+(setq package-archives
+      '(("melpa" . "https://melpa.org/packages/")
+        ("gnu" . "https://elpa.gnu.org/packages/")
+        ("org" . "https://orgmode.org/elpa/")))
+(package-initialize)
+
+;; Install 'use-package' if it's not installed
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+(setq use-package-always-ensure t)
+
+;; Set default font
+(set-face-attribute 'default nil
+                    :font "Ubuntu Sans Mono-12")
+
+(setq display-line-numbers-width-start t)
+;; Display relative line numbers
+
+(global-display-line-numbers-mode)
+(setq display-line-numbers-type 'visual)
+
+;; Custom theme and faces for a dark background
+(custom-set-faces
+ '(default ((t (:background "#111111" :foreground "#FFFFFF"))))
+ '(font-lock-comment-face ((t (:foreground "#6ACA55" :italic t))))
+ '(font-lock-constant-face ((t (:foreground "#B5CEA8"))))
+ '(font-lock-function-name-face ((t (:foreground "#DCDCAA"))))
+ '(font-lock-keyword-face ((t (:foreground "#569CD6" :weight bold))))
+ '(font-lock-string-face ((t (:foreground "#D69D85"))))
+ '(font-lock-type-face ((t (:foreground "#4EC9B0"))))
+ '(font-lock-variable-name-face ((t (:foreground "#9CDCFE"))))
+ '(region ((t (:background "#414141"))))
+ '(whitespace-tab ((t (:foreground "#636363")))))
+
+(custom-set-variables
+ '(custom-enabled-themes '(deeper-blue))
+ '(custom-safe-themes
+   '("45020ff9acfe0b482e86f300717f11c6a0003270e710d3b46504e5d125cdfd67" default))
+ '(inhibit-startup-screen t)
+ '(package-selected-packages
+   '(format-all tree-sitter highlight-defined chocolate-theme lsp-mode use-package go-mode flycheck)))
+
+
+;; Define a custom face for Go data types with bold weight
+(defface go-bold-type-face
+  '((t (:weight bold :foreground "#4EC9B0")))
+  "Face for Go data types in bold.")
+
+(defun setup-go-mode-font-lock ()
+  "Highlight Go data types in bold."
+  (font-lock-add-keywords
+   nil
+   '(("\\<\\(int\\|int8\\|int16\\|int32\\|int64\\|uint\\|uint8\\|uint16\\|uint32\\|uint64\\|float32\\|float64\\|complex64\\|complex128\\|byte\\|rune\\|string\\|error\\|bool\\)\\>"
+      . 'go-bold-type-face))))
+
+
+;; Define a custom face for true and false in red
+(defface go-boolean-face
+  '((t (:foreground "#f74a5f")))
+  "Face for Go booleans `true` and `false`.")
+
+(defun setup-go-boolean-font-lock ()
+  "Highlight Go boolean literals `true` and `false` in red."
+  (font-lock-add-keywords
+   nil
+   '(("\\<\\(true\\|false\\)\\>" . 'go-boolean-face))))
+
+;; Add the setup function to go-mode-hook
+(add-hook 'go-mode-hook 'setup-go-boolean-font-lock)
+
+
+
+
+;; Add the setup function to go-mode-hook
+(add-hook 'go-mode-hook 'setup-go-mode-font-lock)
+
+
+
+;; General settings
+(setq make-backup-files nil)
+
+;; Whitespace settings to visualize tabs and spaces
+;; (require 'whitespace)
+;; (setq whitespace-style '(face tabs spaces trailing space-before-tab newline indentation empty space-after-tab tab-mark))
+;; (global-whitespace-mode t)
+
+
+;; Prevent auto-indentation
+(setq-default electric-indent-inhibit t)
+
+;; Enable electric-pair mode for automatic closing of brackets and quotes
+(electric-pair-mode 1)
+
+;; Minimal scrolling settings
+(setq scroll-conservatively 102)
+(setq scroll-step 1)
+
+;; Python mode indentation settings
+(setq python-indent-guess-indent-offset nil)
+(setq python-indent-offset 4)
+(add-hook 'python-mode-hook
+          (lambda ()
+            (setq tab-width 4)
+            (setq python-indent-offset 4)
+            (setq indent-tabs-mode nil)))  ;; Python generally uses spaces, not tabs
+
+;; Go mode indentation settings and gofmt formatting on save
+(use-package go-mode
+  :ensure t
+  :config
+  (add-hook 'go-mode-hook
+            (lambda ()
+              (setq tab-width 4)
+              (setq indent-tabs-mode t)
+              (add-hook 'before-save-hook 'gofmt-before-save))))
+
+;; Format-all for automatic formatting on save in multiple modes
+(require 'format-all)
+(add-hook 'go-mode-hook 'format-all-mode)
+(add-hook 'python-mode-hook 'format-all-mode)
+(add-hook 'before-save-hook 'format-all-buffer) ;; Applies formatting before saving
+
+;; Set up Go environment paths
+(setenv "GOPATH" "/home/smuca/go")
+(setenv "GOROOT" "/usr/local/go")
+(add-to-list 'exec-path "/usr/local/go/bin")
+
+;; C-style indentation settings
+(setq c-default-style "bsd"
+      c-basic-offset 8
+      tab-width 8
+      indent-tabs-mode t)
+(setq display-line-numbers-width-start t)
