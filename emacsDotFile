@@ -24,7 +24,7 @@
 
 ;; Custom theme and faces for a dark background
 (custom-set-faces
- '(default ((t (:background "#111111" :foreground "#FFFFFF"))))
+ '(default ((t (:background "#1c1c1c" :foreground "#FFFFFF"))))
  '(font-lock-comment-face ((t (:foreground "#6ACA55" :italic t))))
  '(font-lock-constant-face ((t (:foreground "#B5CEA8"))))
  '(font-lock-function-name-face ((t (:foreground "#DCDCAA"))))
@@ -34,6 +34,18 @@
  '(font-lock-variable-name-face ((t (:foreground "#9CDCFE"))))
  '(region ((t (:background "#414141"))))
  '(whitespace-tab ((t (:foreground "#636363")))))
+
+
+(defun apply-comment-face-to-delimiters ()
+  "Make comment symbols inherit the comment text color in all programming modes."
+  (font-lock-add-keywords
+   nil
+   ;; Match the comment delimiters to `font-lock-comment-face` for all languages
+   '(("\\(//+\\|#\\|;\\|/\\*+\\|\\*/\\|<!--\\|-->\\)" 1 'font-lock-comment-face t))))
+
+;; Apply the function to all programming modes
+(add-hook 'prog-mode-hook 'apply-comment-face-to-delimiters)
+
 
 (custom-set-variables
  '(custom-enabled-themes '(deeper-blue))
