@@ -1,4 +1,8 @@
-;; Initialize package sources
+;; -*- lexical-binding: t -*-
+;; Emacs Configuration File
+
+;; Defer package initialization until needed
+(setq package-enable-at-startup nil)  ;; Don't load packages at startup
 (require 'package)
 (setq package-archives
       '(("melpa" . "https://melpa.org/packages/")
@@ -6,143 +10,174 @@
         ("org" . "https://orgmode.org/elpa/")))
 (package-initialize)
 
-;; Install 'use-package' if it's not installed
+;; Ensure `use-package` is installed, but defer loading
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
-(setq use-package-always-ensure t)
+(eval-when-compile
+  (require 'use-package))  ;; Compile-time only
+(setq use-package-always-ensure t
+      use-package-compute-statistics t)  ;; Optional: Track load times
 
-;; Set default font
-(set-face-attribute 'default nil
-                    :font "Ubuntu Sans Mono-12")
+;; UI Enhancements (minimize overhead)
+(set-face-attribute 'default nil :font "Ubuntu Sans Mono-12")
+(setq inhibit-startup-screen t)
+(menu-bar-mode -1)  ;; Disable menu bar for speed
+(tool-bar-mode -1)  ;; Disable toolbar
+(scroll-bar-mode -1)  ;; Disable scroll bars
 
-(setq display-line-numbers-width-start t)
-;; Display relative line numbers
-
-(global-display-line-numbers-mode)
-(setq display-line-numbers-type 'visual)
-
-;; Custom theme and faces for a dark background
+;; Custom Faces for Syntax Highlighting (load eagerly, but lightweight)
 (custom-set-faces
  '(default ((t (:background "#1c1c1c" :foreground "#FFFFFF"))))
- '(font-lock-comment-face ((t (:foreground "#6ACA55" :italic t))))
+ '(font-lock-comment-face ((t (:foreground "#6ACA55"))))
  '(font-lock-constant-face ((t (:foreground "#B5CEA8"))))
- '(font-lock-function-name-face ((t (:foreground "#DCDCAA"))))
- '(font-lock-keyword-face ((t (:foreground "#569CD6" :weight bold))))
+ '(font-lock-function-name-face ((t (:foreground "#f27255"))))
+ '(font-lock-keyword-face ((t (:foreground "#00add8" :weight bold))))
  '(font-lock-string-face ((t (:foreground "#D69D85"))))
- '(font-lock-type-face ((t (:foreground "#4EC9B0"))))
- '(font-lock-variable-name-face ((t (:foreground "#9CDCFE"))))
+ '(font-lock-type-face ((t (:foreground "#80cfb3"))))
+ '(font-lock-variable-name-face ((t (:foreground "#f5d469"))))
+ '(line-number ((t (:foreground "#636363"))))
+ '(line-number-current-line ((t (:foreground "#FFFFFF" :weight bold))))
+ '(rainbow-delimiters-depth-1-face ((t (:foreground "#D4D4D4"))))
+ '(rainbow-delimiters-depth-2-face ((t (:foreground "#569CD6"))))
+ '(rainbow-delimiters-depth-3-face ((t (:foreground "#DCDCAA"))))
+ '(rainbow-delimiters-depth-4-face ((t (:foreground "#C586C0"))))
+ '(rainbow-delimiters-depth-5-face ((t (:foreground "#9CDCFE"))))
+ '(rainbow-delimiters-depth-6-face ((t (:foreground "#4EC9B0"))))
+ '(rainbow-delimiters-depth-7-face ((t (:foreground "#CE9178"))))
+ '(rainbow-delimiters-depth-8-face ((t (:foreground "#B5CEA8"))))
+ '(rainbow-delimiters-depth-9-face ((t (:foreground "#D16969"))))
+ '(rainbow-delimiters-unmatched-face ((t (:background "#FF0000" :foreground "#FFFFFF" :weight bold))))
  '(region ((t (:background "#414141"))))
- '(whitespace-tab ((t (:foreground "#636363")))))
+ '(show-paren-match ((t (:foreground "#FEA600" :weight bold :underline t))))
+ '(show-paren-mismatch ((t (:background "#FF0000" :foreground "#FFFFFF" :weight bold))))
+ '(whitespace-tab ((t (:foreground "#3e4042" :background "unspecified" :weight light))))
+)
 
+;; Load built-in theme directly (no use-package needed)
+(load-theme 'deeper-blue t)
 
-(defun apply-comment-face-to-delimiters ()
-  "Make comment symbols inherit the comment text color in all programming modes."
-  (font-lock-add-keywords
-   nil
-   ;; Match the comment delimiters to `font-lock-comment-face` for all languages
-   '(("\\(//+\\|#\\|;\\|/\\*+\\|\\*/\\|<!--\\|-->\\)" 1 'font-lock-comment-face t))))
+;; Ensure syntax highlighting (minimal overhead)
+(global-font-lock-mode 1)
+(add-hook 'prog-mode-hook #'font-lock-ensure :depth 90)  ;; Lower priority
 
-;; Apply the function to all programming modes
-(add-hook 'prog-mode-hook 'apply-comment-face-to-delimiters)
+;; Display Settings (optimize line numbers)
+(use-package display-line-numbers
+  :defer t
+  :init (global-display-line-numbers-mode 1)
+  :config
+  (setq display-line-numbers-width-start t
+        display-line-numbers 'absolute))
+(column-number-mode 1)
 
+;; Minimal Scrolling (optimized)
+(setq scroll-margin 1
+      scroll-conservatively 101  ;; Higher value for smoother scrolling
+      scroll-step 1
+      scroll-preserve-screen-position t
+      redisplay-skip-fontification-on-input t)  ;; Skip fontification during input
 
-(custom-set-variables
- '(custom-enabled-themes '(deeper-blue))
- '(custom-safe-themes
-   '("45020ff9acfe0b482e86f300717f11c6a0003270e710d3b46504e5d125cdfd67" default))
- '(inhibit-startup-screen t)
- '(package-selected-packages
-   '(format-all tree-sitter highlight-defined chocolate-theme lsp-mode use-package go-mode flycheck)))
+;; Whitespace Mode (defer and optimize)
+(use-package whitespace
+  :defer t
+  :init (global-whitespace-mode 1)
+  :config
+  (setq whitespace-style '(face tabs tab-mark trailing)
+        whitespace-display-mappings '((tab-mark 9 [124 9] [92 9]))))
 
-
-;; Define a custom face for Go data types with bold weight
-(defface go-bold-type-face
-  '((t (:weight bold :foreground "#4EC9B0")))
-  "Face for Go data types in bold.")
-
-(defun setup-go-mode-font-lock ()
-  "Highlight Go data types in bold."
-  (font-lock-add-keywords
-   nil
-   '(("\\<\\(int\\|int8\\|int16\\|int32\\|int64\\|uint\\|uint8\\|uint16\\|uint32\\|uint64\\|float32\\|float64\\|complex64\\|complex128\\|byte\\|rune\\|string\\|error\\|bool\\)\\>"
-      . 'go-bold-type-face))))
-
-
-;; Define a custom face for true and false in red
-(defface go-boolean-face
-  '((t (:foreground "#f74a5f")))
-  "Face for Go booleans `true` and `false`.")
-
-(defun setup-go-boolean-font-lock ()
-  "Highlight Go boolean literals `true` and `false` in red."
-  (font-lock-add-keywords
-   nil
-   '(("\\<\\(true\\|false\\)\\>" . 'go-boolean-face))))
-
-;; Add the setup function to go-mode-hook
-(add-hook 'go-mode-hook 'setup-go-boolean-font-lock)
-
-
-
-
-;; Add the setup function to go-mode-hook
-(add-hook 'go-mode-hook 'setup-go-mode-font-lock)
-
-
-
-;; General settings
-(setq make-backup-files nil)
-
-;; Whitespace settings to visualize tabs and spaces
-;; (require 'whitespace)
-;; (setq whitespace-style '(face tabs spaces trailing space-before-tab newline indentation empty space-after-tab tab-mark))
-;; (global-whitespace-mode t)
-
-
-;; Prevent auto-indentation
-(setq-default electric-indent-inhibit t)
-
-;; Enable electric-pair mode for automatic closing of brackets and quotes
+;; Electric Pair Mode (lightweight)
 (electric-pair-mode 1)
 
-;; Minimal scrolling settings
-(setq scroll-conservatively 102)
-(setq scroll-step 1)
+;; Rainbow Delimiters (defer loading)
+(use-package rainbow-delimiters
+  :defer t
+  :hook (prog-mode . rainbow-delimiters-mode))
 
-;; Python mode indentation settings
-(setq python-indent-guess-indent-offset nil)
-(setq python-indent-offset 4)
-(add-hook 'python-mode-hook
-          (lambda ()
-            (setq tab-width 4)
-            (setq python-indent-offset 4)
-            (setq indent-tabs-mode nil)))  ;; Python generally uses spaces, not tabs
+;; Highlight Comment Delimiters (optimized)
+(defun highlight-comment-delimiters ()
+  "Make comment symbols inherit the comment text color in programming modes."
+  (font-lock-add-keywords
+   nil '(("\(//+\|#\|;\|/\*+\|\*/\|<!--\|-->\)" 1 'font-lock-comment-face t))))
+(add-hook 'prog-mode-hook #'highlight-comment-delimiters :depth 90)
 
-;; Go mode indentation settings and gofmt formatting on save
-(use-package go-mode
-  :ensure t
-  :config
-  (add-hook 'go-mode-hook
-            (lambda ()
-              (setq tab-width 4)
-              (setq indent-tabs-mode t)
-              (add-hook 'before-save-hook 'gofmt-before-save))))
-
-;; Format-all for automatic formatting on save in multiple modes
-(require 'format-all)
-(add-hook 'go-mode-hook 'format-all-mode)
-(add-hook 'python-mode-hook 'format-all-mode)
-(add-hook 'before-save-hook 'format-all-buffer) ;; Applies formatting before saving
-
-;; Set up Go environment paths
-(setenv "GOPATH" "/home/smuca/go")
-(setenv "GOROOT" "/usr/local/go")
-(add-to-list 'exec-path "/usr/local/go/bin")
-
-;; C-style indentation settings
+;; C-style indentation
 (setq c-default-style "bsd"
       c-basic-offset 8
       tab-width 8
       indent-tabs-mode t)
-(setq display-line-numbers-width-start t)
+
+;; Python Mode (defer)
+(use-package python
+  :defer t
+  :mode ("\\.py\\'" . python-mode)
+  :config
+  (setq python-indent-offset 4
+        tab-width 4
+        indent-tabs-mode nil)
+  (add-hook 'python-mode-hook (lambda () (setq tab-width 4))))
+
+;; Go Mode (defer)
+(use-package go-mode
+  :defer t
+  :mode ("\\.go\\'" . go-mode)
+  :init
+  (setenv "GOPATH" "/home/smuca/go")
+  (setenv "GOROOT" "/usr/local/go")
+  (add-to-list 'exec-path "/usr/local/go/bin")
+  :config
+  (defun go-custom-setup ()
+    "Custom Go setup."
+    (setq tab-width 4 indent-tabs-mode t)
+    (add-hook 'before-save-hook #'gofmt-before-save nil t))
+  :hook (go-mode . go-custom-setup))
+
+;; JavaScript Mode (defer)
+(use-package js2-mode
+  :defer t
+  :mode ("\\.js\\'" . js2-mode)
+  :hook (js2-mode . js2-highlight-vars-mode)
+  :config
+  (setq js2-highlight-level 3
+        js-indent-level 2)
+  (add-hook 'js2-mode-hook
+            (lambda ()
+              (set (make-local-variable 'comment-start) "// ")
+              (set (make-local-variable 'comment-end) ""))))
+
+;; Web Mode (defer)
+(use-package web-mode
+  :defer t
+  :mode ("\\.js\\'" "\\.jsx\\'" "\\.ts\\'" "\\.tsx\\'")
+  :config
+  (setq web-mode-code-indent-offset 2
+        web-mode-markup-indent-offset 2))
+
+;; Messages Buffer Color (defer execution)
+(defun customize-messages-buffer-color ()
+  "Set *Messages* buffer text color to green."
+  (with-current-buffer "*Messages*"
+    (face-remap-add-relative 'default '(:foreground "green"))))
+(add-hook 'messages-buffer-mode-hook #'customize-messages-buffer-color :depth 90)
+
+;; General Settings
+(setq make-backup-files nil
+      gc-cons-threshold 100000000)  ;; Increase GC threshold for speed
+
+;; Show Paren Mode (lightweight)
+(show-paren-mode 1)
+(setq show-paren-delay 0
+      show-paren-style 'parenthesis)
+
+;; Custom Variables
+(custom-set-variables
+ '(package-selected-packages
+   '(emmet-mode cc-cedict flycheck web-mode-edit-element web-mode tree-sitter-langs tree-sitter-ispell rainbow-delimiters highlight-parentheses highlight-defined go-mode format-all doom-themes dash)))
+
+;; Optional: Enable Emacs daemon for instant client startup
+;; Run `emacs --daemon` and use `emacsclient -t` to connect
+;; this is custom key biding for copy the entire like like c-k but doesn't cut it
+(global-set-key (kbd "C-c l")
+  (lambda ()
+    (interactive)
+    (kill-ring-save (line-beginning-position) (line-beginning-position 2))
+    (message "Line copied!")))
