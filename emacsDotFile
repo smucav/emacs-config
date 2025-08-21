@@ -1,34 +1,38 @@
-;; -*- lexical-binding: t -*-
+;;; -*- lexical-binding: t -*-
 ;; Emacs Configuration File
 
 ;; Defer package initialization until needed
-(setq package-enable-at-startup nil)  ;; Don't load packages at startup
+(setq package-enable-at-startup nil)
 (require 'package)
 (setq package-archives
       '(("melpa" . "https://melpa.org/packages/")
         ("gnu" . "https://elpa.gnu.org/packages/")
-        ("org" . "https://orgmode.org/elpa/")))
+        ("org" . "https://orgmode.org/elpa/")
+        ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
 (package-initialize)
 
-;; Ensure `use-package` is installed, but defer loading
+;; Ensure `use-package` is installed
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
 (eval-when-compile
-  (require 'use-package))  ;; Compile-time only
+  (require 'use-package))
 (setq use-package-always-ensure t
-      use-package-compute-statistics t)  ;; Optional: Track load times
+      use-package-compute-statistics t)
 
-;; UI Enhancements (minimize overhead)
+;; UI Enhancements
 (set-face-attribute 'default nil :font "Ubuntu Sans Mono-12")
 (setq inhibit-startup-screen t)
-(menu-bar-mode -1)  ;; Disable menu bar for speed
-(tool-bar-mode -1)  ;; Disable toolbar
-(scroll-bar-mode -1)  ;; Disable scroll bars
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
 
-;; Custom Faces for Syntax Highlighting (load eagerly, but lightweight)
+;; Custom Faces for Syntax Highlighting
 (custom-set-faces
  '(default ((t (:background "#1c1c1c" :foreground "#FFFFFF"))))
+ '(flycheck-error ((t (:underline (:style wave :color "#FF0000") :foreground "#FF0000" :weight bold))))
+ '(flycheck-info ((t (:underline (:style wave :color "#00FF00")))))
+ '(flycheck-warning ((t (:underline (:style wave :color "#FFA500") :foreground "#FFA500"))))
  '(font-lock-comment-face ((t (:foreground "#6ACA55"))))
  '(font-lock-constant-face ((t (:foreground "#B5CEA8"))))
  '(font-lock-function-name-face ((t (:foreground "#f27255"))))
@@ -51,17 +55,16 @@
  '(region ((t (:background "#414141"))))
  '(show-paren-match ((t (:foreground "#FEA600" :weight bold :underline t))))
  '(show-paren-mismatch ((t (:background "#FF0000" :foreground "#FFFFFF" :weight bold))))
- '(whitespace-tab ((t (:foreground "#3e4042" :background "unspecified" :weight light))))
-)
+ '(whitespace-tab ((t (:foreground "#3e4042" :weight light)))))
 
-;; Load built-in theme directly (no use-package needed)
+;; Load built-in theme
 (load-theme 'deeper-blue t)
 
-;; Ensure syntax highlighting (minimal overhead)
+;; Syntax Highlighting
 (global-font-lock-mode 1)
-(add-hook 'prog-mode-hook #'font-lock-ensure :depth 90)  ;; Lower priority
+(add-hook 'prog-mode-hook #'font-lock-ensure :depth 90)
 
-;; Display Settings (optimize line numbers)
+;; Display Settings
 (use-package display-line-numbers
   :defer t
   :init (global-display-line-numbers-mode 1)
@@ -70,14 +73,14 @@
         display-line-numbers 'absolute))
 (column-number-mode 1)
 
-;; Minimal Scrolling (optimized)
+;; Scrolling
 (setq scroll-margin 1
-      scroll-conservatively 101  ;; Higher value for smoother scrolling
+      scroll-conservatively 101
       scroll-step 1
       scroll-preserve-screen-position t
-      redisplay-skip-fontification-on-input t)  ;; Skip fontification during input
+      redisplay-skip-fontification-on-input t)
 
-;; Whitespace Mode (defer and optimize)
+;; Whitespace Mode
 (use-package whitespace
   :defer t
   :init (global-whitespace-mode 1)
@@ -85,15 +88,15 @@
   (setq whitespace-style '(face tabs tab-mark trailing)
         whitespace-display-mappings '((tab-mark 9 [124 9] [92 9]))))
 
-;; Electric Pair Mode (lightweight)
+;; Electric Pair Mode
 (electric-pair-mode 1)
 
-;; Rainbow Delimiters (defer loading)
+;; Rainbow Delimiters
 (use-package rainbow-delimiters
   :defer t
   :hook (prog-mode . rainbow-delimiters-mode))
 
-;; Highlight Comment Delimiters (optimized)
+;; Highlight Comment Delimiters
 (defun highlight-comment-delimiters ()
   "Make comment symbols inherit the comment text color in programming modes."
   (font-lock-add-keywords
@@ -106,7 +109,7 @@
       tab-width 8
       indent-tabs-mode t)
 
-;; Python Mode (defer)
+;; Python Mode
 (use-package python
   :defer t
   :mode ("\\.py\\'" . python-mode)
@@ -116,7 +119,7 @@
         indent-tabs-mode nil)
   (add-hook 'python-mode-hook (lambda () (setq tab-width 4))))
 
-;; Go Mode (defer)
+;; Go Mode
 (use-package go-mode
   :defer t
   :mode ("\\.go\\'" . go-mode)
@@ -131,11 +134,10 @@
     (add-hook 'before-save-hook #'gofmt-before-save nil t))
   :hook (go-mode . go-custom-setup))
 
-;; JavaScript Mode (defer)
+;; JavaScript Mode
 (use-package js2-mode
   :defer t
   :mode ("\\.js\\'" . js2-mode)
-  :hook (js2-mode . js2-highlight-vars-mode)
   :config
   (setq js2-highlight-level 3
         js-indent-level 2)
@@ -144,15 +146,15 @@
               (set (make-local-variable 'comment-start) "// ")
               (set (make-local-variable 'comment-end) ""))))
 
-;; Web Mode (defer)
+;; Web Mode
 (use-package web-mode
   :defer t
-  :mode ("\\.js\\'" "\\.jsx\\'" "\\.ts\\'" "\\.tsx\\'")
+  :mode ("\\.jsx\\'" "\\.ts\\'" "\\.tsx\\'")
   :config
   (setq web-mode-code-indent-offset 2
         web-mode-markup-indent-offset 2))
 
-;; Messages Buffer Color (defer execution)
+;; Messages Buffer Color
 (defun customize-messages-buffer-color ()
   "Set *Messages* buffer text color to green."
   (with-current-buffer "*Messages*"
@@ -161,9 +163,9 @@
 
 ;; General Settings
 (setq make-backup-files nil
-      gc-cons-threshold 100000000)  ;; Increase GC threshold for speed
+      gc-cons-threshold 100000000)
 
-;; Show Paren Mode (lightweight)
+;; Show Paren Mode
 (show-paren-mode 1)
 (setq show-paren-delay 0
       show-paren-style 'parenthesis)
@@ -171,13 +173,114 @@
 ;; Custom Variables
 (custom-set-variables
  '(package-selected-packages
-   '(emmet-mode cc-cedict flycheck web-mode-edit-element web-mode tree-sitter-langs tree-sitter-ispell rainbow-delimiters highlight-parentheses highlight-defined go-mode format-all doom-themes dash)))
+   '(company counsel deadgrep flycheck flycheck-posframe go-mode ivy
+             js2-mode lsp-mode lsp-ui rainbow-delimiters web-mode yasnippet yasnippet-snippets)))
 
-;; Optional: Enable Emacs daemon for instant client startup
-;; Run `emacs --daemon` and use `emacsclient -t` to connect
-;; this is custom key biding for copy the entire like like c-k but doesn't cut it
+;; Custom Keybinding for Copy Line
 (global-set-key (kbd "C-c l")
   (lambda ()
     (interactive)
     (kill-ring-save (line-beginning-position) (line-beginning-position 2))
     (message "Line copied!")))
+
+;; Deadgrep for project-wide search
+(use-package deadgrep
+  :defer t
+  :bind ("C-c s" . deadgrep))
+
+;; Company for completion
+(use-package company
+  :defer t
+  :init (global-company-mode)
+  :config
+  (setq company-idle-delay 0.1
+        company-minimum-prefix-length 1))
+
+;; Function to check linter availability
+(defun check-linter-availability ()
+  "Check for required linters and notify if missing, contextually."
+  (when (eq major-mode 'python-mode)
+    (unless (executable-find "flake8")
+      (message "Warning: 'flake8' not found. Install with 'pip install flake8' for Python linting.")))
+  (when (eq major-mode 'go-mode)
+    (unless (executable-find "golangci-lint")
+      (message "Warning: 'golangci-lint' not found. Install with 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest' for Go linting."))
+    (unless (executable-find "gopls")
+      (message "Warning: 'gopls' not found. Install with 'go install golang.org/x/tools/gopls@latest' for Go LSP support.")))
+  (when (memq major-mode '(js2-mode web-mode))
+    (unless (executable-find "eslint")
+      (message "Warning: 'eslint' not found. Install with 'npm install -g eslint' for JavaScript linting."))))
+
+(add-hook 'after-change-major-mode-hook #'check-linter-availability)
+
+;; Flycheck for real-time error checking
+(use-package flycheck
+  :defer t
+  :init (global-flycheck-mode)
+  :config
+  (setq flycheck-check-syntax-automatically '(save idle-change)
+        flycheck-idle-change-delay 0.5
+        flycheck-display-errors-delay 0.2)
+  ;; Python: Use flake8
+  (setq flycheck-python-flake8-executable "flake8")
+  ;; Go: Use golangci-lint
+  (when (executable-find "golangci-lint")
+    (flycheck-golangci-lint-setup))
+  ;; JavaScript: Use eslint
+  (setq flycheck-javascript-eslint-executable "eslint")
+  ;; Prioritize checkers
+  (flycheck-add-mode 'python-flake8 'python-mode)
+  (flycheck-add-mode 'javascript-eslint 'js2-mode)
+  (flycheck-add-mode 'javascript-eslint 'web-mode))
+
+;; Flycheck-Posframe for VS Code-like error popups
+(use-package flycheck-posframe
+  :after flycheck
+  :hook (flycheck-mode . flycheck-posframe-mode)
+  :config
+  (setq flycheck-posframe-position 'point-bottom-left
+        flycheck-posframe-border-width 1
+        flycheck-posframe-prefix "⚠ "))
+
+;; Which-key for keybinding hints
+(use-package which-key
+  :defer t
+  :init (which-key-mode)
+  :config
+  (setq which-key-idle-delay 0.5))
+
+;; Ivy and Counsel for completion and search
+(use-package ivy
+  :defer t
+  :init (ivy-mode 1)
+  :config
+  (setq ivy-use-virtual-buffers t
+        ivy-count-format "(%d/%d) "))
+(use-package counsel
+  :after ivy
+  :bind (("M-x" . counsel-M-x)
+         ("C-x C-f" . counsel-find-file)
+         ("C-c k" . counsel-rg)))
+
+;; Yasnippet for code snippets
+(use-package yasnippet
+  :defer t
+  :init (yas-global-mode 1))
+(use-package yasnippet-snippets :defer t)
+
+;; Ensure Emacs can find gopls and golangci-lint
+(add-to-list 'exec-path (expand-file-name "~/go/bin"))
+(setenv "PATH" (concat (expand-file-name "~/go/bin") ":" (getenv "PATH")))
+
+;; LSP for Go
+(use-package lsp-mode
+  :hook (go-mode . lsp-deferred)
+  :commands (lsp lsp-deferred)
+  :config
+  (setq lsp-gopls-server-path (expand-file-name "~/go/bin/gopls"))
+  (setq lsp-diagnostics-provider :flycheck))
+
+;; Auto-save and backup settings
+(setq auto-save-default t
+      create-lockfiles nil
+      make-backup-files nil)
